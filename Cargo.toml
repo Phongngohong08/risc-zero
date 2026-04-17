@@ -1,0 +1,33 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/common",
+  "crates/vdr-local",
+  "crates/issuer-cli",
+  "crates/holder-cli",
+  "crates/verifier-cli",
+  "risc0/host",
+  "risc0/methods",
+  "risc0/methods/guest",
+]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+anyhow = "1"
+base64 = "0.22"
+clap = { version = "4", features = ["derive"] }
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+time = { version = "0.3", features = ["formatting", "parsing"] }
+hex = "0.4"
+
+# RISC0
+risc0-zkvm = "3.0"
+risc0-build = "3.0"

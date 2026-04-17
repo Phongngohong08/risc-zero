@@ -1,0 +1,17 @@
+# Rust / Cargo
+/target/
+**/target/
+Cargo.lock
+
+# RISC0 / zkVM build artifacts
+**/risc0/methods/target/
+**/risc0/methods/**/target/
+
+# Local demo data (VDR store, VC, challenge, receipts)
+/data/
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+
