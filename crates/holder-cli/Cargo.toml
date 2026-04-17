@@ -1,0 +1,15 @@
+[package]
+name = "holder-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+common = { path = "../common" }
+risc0-host = { path = "../../risc0/host" }
+vdr-local = { path = "../vdr-local" }

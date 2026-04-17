@@ -1,11 +1,9 @@
 # Rust / Cargo
 /target/
 **/target/
-Cargo.lock
 
-# RISC0 / zkVM build artifacts
-**/risc0/methods/target/
-**/risc0/methods/**/target/
+# Note: We intentionally do NOT ignore `Cargo.lock` for this PoC/app repo,
+# so builds are reproducible across machines.
 
 # Local demo data (VDR store, VC, challenge, receipts)
 /data/
