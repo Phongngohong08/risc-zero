@@ -6,6 +6,10 @@ use common::{Challenge, ProverInput, VerifiableCredential};
 use risc0_host::{prove, receipt_to_bytes, verify};
 use vdr_local::VdrStore;
 
+// `holder-cli` is the "prover" side of the flow:
+// it takes a Verifiable Credential + verifier challenge, proves the statement inside RISC0 zkVM,
+// then writes out the zkVM receipt and the public journal ("proof output") for the verifier to check.
+
 #[derive(Debug, Parser)]
 #[command(name = "holder-cli")]
 struct Cli {
@@ -50,6 +54,7 @@ fn cmd_prove(
     out_receipt: PathBuf,
     out_output: PathBuf,
 ) -> Result<()> {
+    // Inputs are JSON files produced by earlier steps (`issuer-cli` and `verifier-cli`).
     let vc_bytes = fs::read(&vc_path).with_context(|| format!("read vc: {vc_path:?}"))?;
     let vc: VerifiableCredential = serde_json::from_slice(&vc_bytes).context("parse vc json")?;
 
@@ -57,6 +62,8 @@ fn cmd_prove(
         fs::read(&challenge_path).with_context(|| format!("read challenge: {challenge_path:?}"))?;
     let challenge: Challenge = serde_json::from_slice(&ch_bytes).context("parse challenge json")?;
 
+    // We resolve the issuer's public key from the local VDR, using the VC's `issuer` DID.
+    // This keeps the zkVM guest input self-contained: the guest gets the VC, challenge, and issuer pubkey.
     let vdr = VdrStore::load_or_default(&vdr_path)?;
     let doc = vdr
         .get_issuer_did_doc(&vc.issuer)
@@ -72,9 +79,13 @@ fn cmd_prove(
         challenge,
     };
 
+    // This is the expensive step: it runs the guest program in RISC0 zkVM and produces a receipt.
     let receipt = prove(&input)?;
+    // Sanity-check receipt locally and extract the public journal.
+    // (The verifier will do its own verification later.)
     let journal = verify(&receipt)?;
 
+    // Outputs are written under `./data/session/` by default so the next CLI step can consume them.
     if let Some(parent) = out_receipt.parent() {
         fs::create_dir_all(parent).with_context(|| format!("create dir: {parent:?}"))?;
     }

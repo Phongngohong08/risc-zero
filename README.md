@@ -53,6 +53,17 @@ Kỳ vọng:
 - `verifier-cli verify` in ra `PASS`
 - `./data/session/proof_output.json` (journal) chỉ chứa `vc_id`, `issuer_did`, `nonce`, `predicate` (không có DOB)
 
+### Dev mode (nhanh, không an toàn)
+
+Nếu bước prove quá lâu trên VM yếu, bạn có thể chạy dev mode. Lưu ý: **dev mode không tạo proof hợp lệ**,
+verifier sẽ phải skip receipt verification.
+
+```bash
+RISC0_DEV_MODE=1 cargo run -p holder-cli --release -- prove --vc ./data/holder/vc.json --challenge ./data/session/challenge.json
+RISC0_DEV_MODE=1 cargo run -p verifier-cli -- verify --receipt ./data/session/receipt.bin --challenge ./data/session/challenge.json
+# (hoặc) cargo run -p verifier-cli -- verify --dev-mode --receipt ./data/session/receipt.bin --challenge ./data/session/challenge.json
+```
+
 ## FAIL cases
 
 ### 1) Tamper VC (signature invalid)

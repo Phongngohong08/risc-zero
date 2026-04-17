@@ -5,7 +5,7 @@ use clap::{Parser, Subcommand};
 use common::{Challenge, Predicate, VerifierExpectation};
 use rand::rngs::OsRng;
 use rand::RngCore;
-use risc0_host::{receipt_from_bytes, verify};
+use risc0_host::{decode_journal_unverified, receipt_from_bytes, verify};
 use time::OffsetDateTime;
 
 #[derive(Debug, Parser)]
@@ -33,6 +33,10 @@ enum Cmd {
         receipt: PathBuf,
         #[arg(long)]
         challenge: PathBuf,
+        /// Insecure: skip receipt verification and only decode/check the journal.
+        /// Intended for local/dev runs when proving with `RISC0_DEV_MODE=1`.
+        #[arg(long, default_value_t = false)]
+        dev_mode: bool,
         #[arg(long, default_value = "./data/session/verifier_result.json")]
         out: PathBuf,
     },
@@ -56,8 +60,9 @@ fn main() -> Result<()> {
         Cmd::Verify {
             receipt,
             challenge,
+            dev_mode,
             out,
-        } => cmd_verify(receipt, challenge, out),
+        } => cmd_verify(receipt, challenge, dev_mode, out),
     }
 }
 
@@ -88,7 +93,7 @@ fn cmd_challenge(out: PathBuf, min_age: u8, as_of: Option<String>) -> Result<()>
     Ok(())
 }
 
-fn cmd_verify(receipt_path: PathBuf, challenge_path: PathBuf, out: PathBuf) -> Result<()> {
+fn cmd_verify(receipt_path: PathBuf, challenge_path: PathBuf, dev_mode: bool, out: PathBuf) -> Result<()> {
     let receipt_bytes =
         fs::read(&receipt_path).with_context(|| format!("read receipt: {receipt_path:?}"))?;
     let receipt = receipt_from_bytes(&receipt_bytes)?;
@@ -101,7 +106,26 @@ fn cmd_verify(receipt_path: PathBuf, challenge_path: PathBuf, out: PathBuf) -> R
         challenge: challenge.clone(),
     };
 
-    let result = match verify(&receipt) {
+    let env_dev_mode = std::env::var("RISC0_DEV_MODE")
+        .ok()
+        .is_some_and(|v| {
+            let v = v.trim().to_ascii_lowercase();
+            !(v.is_empty() || v == "0" || v == "false" || v == "no")
+        });
+    let dev_mode = dev_mode || env_dev_mode;
+
+    if dev_mode {
+        eprintln!("WARNING: verifier running in dev mode (skipping receipt verification).");
+        eprintln!("WARNING: this is insecure and must not be used in production.");
+    }
+
+    let verify_result = if dev_mode {
+        decode_journal_unverified(&receipt)
+    } else {
+        verify(&receipt)
+    };
+
+    let result = match verify_result {
         Ok(journal) => {
             if journal.nonce != expectation.challenge.nonce {
                 VerifierResult {

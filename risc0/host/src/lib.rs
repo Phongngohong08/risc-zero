@@ -25,6 +25,15 @@ pub fn verify(receipt: &Receipt) -> Result<ProofJournal> {
     Ok(journal)
 }
 
+/// Decode the public journal without verifying the receipt.
+///
+/// This is only useful for local/dev workflows (e.g. when proving with `RISC0_DEV_MODE=1`),
+/// where the produced receipt is intentionally *not* a valid cryptographic proof.
+pub fn decode_journal_unverified(receipt: &Receipt) -> Result<ProofJournal> {
+    let journal: ProofJournal = receipt.journal.decode().context("decode journal")?;
+    Ok(journal)
+}
+
 pub fn receipt_to_bytes(receipt: &Receipt) -> Result<Vec<u8>> {
     let words: Vec<u32> = risc0_zkvm::serde::to_vec(receipt).context("serialize receipt")?;
     Ok(words_to_le_bytes(&words))
