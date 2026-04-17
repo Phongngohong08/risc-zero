@@ -1255,6 +1255,7 @@ dependencies = [
  "risc0-host",
  "serde",
  "serde_json",
+ "time",
  "vdr-local",
 ]
 
